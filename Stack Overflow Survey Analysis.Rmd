@@ -1,0 +1,154 @@
+---
+title: "StackOverflow Annual Developer Survey 2020 Analysis"
+author: "Fechar Ourotcha"
+date: "11/10/2020"
+output: pdf_document
+          
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview:
+
+Every year, StackOverflow deploys a survey to many of its participants. With nearly 65,000 responses fielded from over 180 countries and dependent territories, StackOverflow's 2020 Annual Developer Survey examines all aspects of the developer experience from career satisfaction and job search to education and opinions on open-source software.
+
+In this analysis, we are going to analyze the survey dataset and draw key insights about the participant in regards to their race, gender, age,compensation rate, ect. The purpose of this analysis is the provide a detailed insight about professionals working as developers that will be useful to aspiring delovper who have not began their journey yet. 
+
+## The Original dataset contain sixty-one variables and 64461 observations, however, we will be using only 11 of those variables. 
+
+
+
+```{r,  }
+# Loading the necessary packages and Importing the data
+
+library(tidyverse)
+library(readxl)
+library(assertthat)
+survey_2020 <- read.csv("Survey_Results_Dataset.csv")
+
+# Examming the structure of the dataset and filtering for variables that we are using
+
+survey_2020_filtered <- survey_2020 %>%
+                        select(WorkWeekHrs, YearsCode, Age, Gender, Ethnicity, EdLevel,
+                               DevType, Country, ConvertedComp, MainBranch,
+                                Age1stCode)
+
+glimpse(survey_2020_filtered)
+head(survey_2020_filtered, 10)
+tail(survey_2020_filtered)
+
+```
+
+# Data Cleaning & EDA: 
+
+There are a lot of missing values within this dataset. Given that this is a survey, we can assume that the missing values are questions which the individual did not want to answer or did not have an answer. We  
+
+however, this is understandable given that people tends to not cBecause this was a survey, 
+
+```{r}
+library(visdat)
+# Checking the completeness of the datset
+survey_2020_filtered <-  survey_2020_filtered%>%
+                    arrange(Age)
+
+vis_miss(survey_2020_filtered)
+
+```
+We will begin by looking at the demographic of the survey participants.
+
+gender, ethinicity and  age range of our developers
+
+
+from the graph, we can the number of  female developers or genderqueers are extremely disproportion compare to males
+
+```{r}
+# recategorizing the categories within the gender column and plot the result
+
+survey_2020_filtered_gender <- survey_2020_filtered%>%
+  filter(!is.na(Gender))%>%
+mutate(Gender = fct_collapse(Gender, Other = c("Man;Non-binary, genderqueer, or gender non-conforming",
+                                               "Non-binary, genderqueer, or gender non-conforming",
+                                               "Woman;Man",
+                                               "Woman;Man;Non-binary, genderqueer, or gender non-conforming",
+                                               "Woman;Non-binary, genderqueer, or gender non-conforming")))%>%
+                                                count(Gender)
+
+
+ggplot(survey_2020_filtered_gender, aes(Gender, n))+
+  geom_col()
+  
+# Checking out the age range of the participants
+
+survey_2020_filtered%>%
+  filter(Age <= 100)%>%
+  ggplot(aes(Age))+
+   geom_density()+geom_histogram(binwidth = 2 )
+
+
+
+# checking out the ethnicity of the participant, but first we must collapse certain levels together    
+
+survey_2020_filtered%>%
+  mutate(Ethnicity = fct_collapse(Ethnicity,
+                                  Biracial = Biracial)))
+  count(Ethnicity)
+
+# Putting the demographic variables of interest into a list
+dem <- list(survey_2020_filtered$Gender, survey_2020_filtered$Ethnicity, survey_2020_filtered$Country)
+
+# counting th levels within each demographic variable
+for (i in dem){
+    print(nlevels(i))
+}
+  
+ levels(survey_2020_filtered$Gender)
+```
+
+```{r}
+# In the  data an individual put 279 as their age.  There  
+ Age_plot <-survey_2020_filtered%>%
+  filter(Age <= 100)
+
+ggplot(Age_plot, aes(Age))+
+  geom_histogram(bins = 20)+xlim(c(0,100))
+  
+```
+
+```{r}
+install.packages("countrycode")
+library(countrycode)
+# The are to many countries for ploting, so I am recategorizinng them to their perspect continent.
+
+cont_count <- survey_2020_filtered %>%
+  filter(Country != c('Kosovo','Nomadic'))
+
+cont_count <-  mutate(Continent = countrycode(sourcevar = cont_count[,"Country"],
+                            origin = "country.name",
+                            destination = "continent"))#%>%
+      count(Continent)%>%
+      arrange(desc(n))
+
+  ggplot(cont_count,  aes(Continent, n))+
+  geom_bar()
+```
+
+
+
+```{r}
+
+survey_2020_filtered%>%
+  filter(Age <= 100,
+         ConvertedComp > 0)%>%
+ggplot(aes( ConvertedComp, Age))+
+  geom_point()+geom_jitter()
+
+
+
+survey_2020_filtered%>%
+  filter(Age <= 100)%>%
+ggplot(aes( ConvertedComp, EdLevel))+
+  geom_point()
+```
+
